@@ -29,7 +29,7 @@ from sbp.observation import SBP_MSG_OBS, SBP_MSG_OBS_DEP_A, SBP_MSG_OBS_DEP_B, S
 from zope.interface.exceptions import Invalid
 # Piksi Multi features an IMU
 from sbp.imu import *
-import sbp.version
+#import sbp.version
 # networking stuff
 import UdpHelpers
 import time
@@ -39,7 +39,7 @@ import threading
 from sbp.piksi import MsgUartState, SBP_MSG_UART_STATE
 
 class PiksiMulti:
-    LIB_SBP_VERSION_MULTI = '2.2.1' # SBP version used for Piksi Multi.
+    LIB_SBP_VERSION_MULTI = '2.2.12' # SBP version used for Piksi Multi.
 
     # Geodetic Constants.
     kSemimajorAxis = 6378137
@@ -53,12 +53,12 @@ class PiksiMulti:
         # Print info.
         rospy.sleep(0.5)  # Wait for a while for init to complete before printing.
         rospy.loginfo(rospy.get_name() + " start")
-        rospy.loginfo("libsbp version currently used: " + sbp.version.get_git_version())
+        #rospy.loginfo("libsbp version currently used: " + sbp.version.get_git_version())
 
         # Check for correct SBP library version dependent on Piksi device.
-        if PiksiMulti.LIB_SBP_VERSION_MULTI != sbp.version.get_git_version():
+        '''if PiksiMulti.LIB_SBP_VERSION_MULTI != sbp.version.get_git_version():
             rospy.logwarn("Lib SBP version in usage (%s) is different than the one used to test this driver (%s)!" % (
-                sbp.version.get_git_version(), PiksiMulti.LIB_SBP_VERSION_MULTI))
+                sbp.version.get_git_version(), PiksiMulti.LIB_SBP_VERSION_MULTI))'''
 
         # Open a connection to Piksi.
         serial_port = rospy.get_param('~serial_port', '/dev/ttyUSB0')
