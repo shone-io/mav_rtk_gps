@@ -8,4 +8,3 @@ uint32 tow          # GPS Time of Week [ms].
 uint32 heading      # Heading [mdeg].
 uint8  n_sats       # Number of satellites used in solution
 uint8  flags        # Status flag.
-

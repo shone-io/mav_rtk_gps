@@ -17,7 +17,8 @@ from piksi_rtk_msgs.msg import *
 from geometry_msgs.msg import PoseWithCovarianceStamped, PointStamped, PoseWithCovariance, Point, TransformStamped, \
     Transform
 # Import Piksi SBP library
-from sbp.client.drivers.pyserial_driver import PySerialDriver
+# from sbp.client.drivers.pyserial_driver import PySerialDriver
+from sbp.client.drivers.network_drivers import TCPDriver
 from sbp.client import Handler, Framer
 from sbp.navigation import *
 from sbp.logging import *
@@ -61,15 +62,12 @@ class PiksiMulti:
                 sbp.version.get_git_version(), PiksiMulti.LIB_SBP_VERSION_MULTI))
 
         # Open a connection to Piksi.
-        serial_port = rospy.get_param('~serial_port', '/dev/ttyUSB0')
-        baud_rate = rospy.get_param('~baud_rate', 115200)
+        tcp_host = rospy.get_param('~tcp_host', '192.168.0.222')
+        tcp_port = rospy.get_param('~tcp_port', 55555)
 
-        try:
-            self.driver = PySerialDriver(serial_port, baud=baud_rate)
-        except SystemExit:
-            rospy.logerr("Piksi not found on serial port '%s'", serial_port)
-            raise
-       
+        self.driver = TCPDriver(tcp_host, tcp_port)
+        # LIB_SBP_VERSION_MULTI 2.2.1 do not support custom timeout in case of wrong host/port
+
         # Create a handler to connect Piksi driver to callbacks.
         self.framer = Framer(self.driver.read, self.driver.write, verbose=True)
         self.handler = Handler(self.framer)
@@ -144,7 +142,7 @@ class PiksiMulti:
 	# Watchdog timer info
         self.watchdog_time = rospy.get_rostime()
         self.messages_started = False
-	
+
         # Only have start-up reset in base station mode
         if self.base_station_mode:
             # Things have 30 seconds to start or we will kill node
@@ -191,7 +189,7 @@ class PiksiMulti:
         self.init_callback('log', Log,
                            SBP_MSG_LOG, MsgLog, 'level', 'text')
         self.init_callback('baseline_heading', BaselineHeading,
-                           SBP_MSG_BASELINE_HEADING, BaselineHeading, 'tow', 'heading', 'n_sats', 'flags')
+                           SBP_MSG_BASELINE_HEADING, MsgBaselineHeading, 'tow', 'heading', 'n_sats', 'flags')
 
         # do not publish llh message, prefer publishing directly navsatfix_spp or navsatfix_rtk_fix.
         # self.init_callback('pos_llh', PosLlh,
@@ -424,8 +422,8 @@ class PiksiMulti:
     def watchdog_callback(self, event):
         if ((rospy.get_rostime() - self.watchdog_time).to_sec() > 10.0):
             rospy.logwarn("Heartbeat failed, watchdog triggered.")
-            
-            if self.base_station_mode:        
+
+            if self.base_station_mode:
                 rospy.signal_shutdown("Watchdog triggered, was gps disconnected?")
 
     def pos_llh_callback(self, msg_raw, **metadata):
@@ -437,10 +435,10 @@ class PiksiMulti:
         # SPP GPS messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_SPP:
             self.publish_spp(msg.lat, msg.lon, msg.height)
-            
+
         #TODO: Differential GNSS (DGNSS)
         #elif msg.flags == PosLlhMulti.FIX_MODE_DGNSS
-        
+
         # RTK GPS messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_FLOAT_RTK and self.debug_mode:
             self.publish_rtk_float(msg.lat, msg.lon, msg.height)
@@ -448,7 +446,7 @@ class PiksiMulti:
             # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
             if not self.origin_enu_set:
                 self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
-    
+
             self.publish_rtk_fix(msg.lat, msg.lon, msg.height)
         # Update debug msg and publish.
         self.receiver_state_msg.rtk_mode_fix = True if (msg.flags == PosLlhMulti.FIX_MODE_FIX_RTK) else False
@@ -616,7 +614,7 @@ class PiksiMulti:
         uart_state_msg.uart_b_io_error_count = msg.uart_b.io_error_count
         uart_state_msg.uart_b_tx_buffer_level = msg.uart_b.tx_buffer_level
         uart_state_msg.uart_b_rx_buffer_level = msg.uart_b.rx_buffer_level
-        
+
         uart_state_msg.uart_ftdi_tx_throughput = msg.uart_ftdi.tx_throughput
         uart_state_msg.uart_ftdi_rx_throughput = msg.uart_ftdi.rx_throughput
         uart_state_msg.uart_ftdi_crc_error_count = msg.uart_ftdi.crc_error_count
@@ -628,7 +626,7 @@ class PiksiMulti:
         uart_state_msg.latency_lmin = msg.latency.lmin
         uart_state_msg.latency_lmax = msg.latency.lmax
         uart_state_msg.latency_current = msg.latency.current
-        
+
         uart_state_msg.obs_period_avg = msg.obs_period.avg
         uart_state_msg.obs_period_pmin = msg.obs_period.pmin
         uart_state_msg.obs_period_pmax = msg.obs_period.pmax
