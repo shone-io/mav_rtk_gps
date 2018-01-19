@@ -69,7 +69,7 @@ class PiksiMulti:
         except SystemExit:
             rospy.logerr("Piksi not found on serial port '%s'", serial_port)
             raise
-       
+
         # Create a handler to connect Piksi driver to callbacks.
         self.framer = Framer(self.driver.read, self.driver.write, verbose=True)
         self.handler = Handler(self.framer)
@@ -144,7 +144,7 @@ class PiksiMulti:
 	# Watchdog timer info
         self.watchdog_time = rospy.get_rostime()
         self.messages_started = False
-	
+
         # Only have start-up reset in base station mode
         if self.base_station_mode:
             # Things have 30 seconds to start or we will kill node
@@ -183,10 +183,10 @@ class PiksiMulti:
         self.init_callback('vel_ned', VelNed,
                            SBP_MSG_VEL_NED, MsgVelNED,
                            'tow', 'n', 'e', 'd', 'h_accuracy', 'v_accuracy', 'n_sats', 'flags')
-        self.init_callback('imu_raw', ImuRawMulti,
+        self.init_callback('imu_raw_multi', ImuRawMulti,
                            SBP_MSG_IMU_RAW, MsgImuRaw,
                            'tow', 'tow_f', 'acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z')
-        self.init_callback('imu_aux', ImuAuxMulti,
+        self.init_callback('imu_aux_multi', ImuAuxMulti,
                            SBP_MSG_IMU_AUX, MsgImuAux, 'imu_type', 'temp', 'imu_conf')
         self.init_callback('log', Log,
                            SBP_MSG_LOG, MsgLog, 'level', 'text')
@@ -424,8 +424,8 @@ class PiksiMulti:
     def watchdog_callback(self, event):
         if ((rospy.get_rostime() - self.watchdog_time).to_sec() > 10.0):
             rospy.logwarn("Heartbeat failed, watchdog triggered.")
-            
-            if self.base_station_mode:        
+
+            if self.base_station_mode:
                 rospy.signal_shutdown("Watchdog triggered, was gps disconnected?")
 
     def pos_llh_callback(self, msg_raw, **metadata):
@@ -437,10 +437,10 @@ class PiksiMulti:
         # SPP GPS messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_SPP:
             self.publish_spp(msg.lat, msg.lon, msg.height)
-            
+
         #TODO: Differential GNSS (DGNSS)
         #elif msg.flags == PosLlhMulti.FIX_MODE_DGNSS
-        
+
         # RTK GPS messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_FLOAT_RTK and self.debug_mode:
             self.publish_rtk_float(msg.lat, msg.lon, msg.height)
@@ -448,7 +448,7 @@ class PiksiMulti:
             # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
             if not self.origin_enu_set:
                 self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
-    
+
             self.publish_rtk_fix(msg.lat, msg.lon, msg.height)
         # Update debug msg and publish.
         self.receiver_state_msg.rtk_mode_fix = True if (msg.flags == PosLlhMulti.FIX_MODE_FIX_RTK) else False
@@ -616,7 +616,7 @@ class PiksiMulti:
         uart_state_msg.uart_b_io_error_count = msg.uart_b.io_error_count
         uart_state_msg.uart_b_tx_buffer_level = msg.uart_b.tx_buffer_level
         uart_state_msg.uart_b_rx_buffer_level = msg.uart_b.rx_buffer_level
-        
+
         uart_state_msg.uart_ftdi_tx_throughput = msg.uart_ftdi.tx_throughput
         uart_state_msg.uart_ftdi_rx_throughput = msg.uart_ftdi.rx_throughput
         uart_state_msg.uart_ftdi_crc_error_count = msg.uart_ftdi.crc_error_count
@@ -628,7 +628,7 @@ class PiksiMulti:
         uart_state_msg.latency_lmin = msg.latency.lmin
         uart_state_msg.latency_lmax = msg.latency.lmax
         uart_state_msg.latency_current = msg.latency.current
-        
+
         uart_state_msg.obs_period_avg = msg.obs_period.avg
         uart_state_msg.obs_period_pmin = msg.obs_period.pmin
         uart_state_msg.obs_period_pmax = msg.obs_period.pmax
