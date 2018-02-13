@@ -4,9 +4,9 @@ project(piksi_multi_rtk_gps)
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
-install(FILES
-  launch/piksi_multi.launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+install(
+  DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
 cs_export()
