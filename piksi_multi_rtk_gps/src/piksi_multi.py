@@ -38,6 +38,8 @@ import re
 import threading
 from sbp.piksi import MsgUartState, SBP_MSG_UART_STATE
 
+import warnings
+
 class PiksiMulti:
     LIB_SBP_VERSION_MULTI = '2.2.1' # SBP version used for Piksi Multi.
 
@@ -80,15 +82,15 @@ class PiksiMulti:
         else:
             rospy.loginfo("Piksi driver started in normal mode.")
 
-        # Corrections over WiFi settings.
-        self.base_station_mode = rospy.get_param('~base_station_mode', False)
-        self.udp_broadcast_addr = rospy.get_param('~broadcast_addr', '255.255.255.255')
-        self.udp_port = rospy.get_param('~broadcast_port', 26078)
-        self.base_station_ip_for_latency_estimation = rospy.get_param(
-            '~base_station_ip_for_latency_estimation',
-            '10.10.10.1')
-        self.multicaster = []
-        self.multicast_recv = []
+        # # Corrections over WiFi settings.
+        # self.base_station_mode = rospy.get_param('~base_station_mode', False)
+        # self.udp_broadcast_addr = rospy.get_param('~broadcast_addr', '255.255.255.255')
+        # self.udp_port = rospy.get_param('~broadcast_port', 26078)
+        # self.base_station_ip_for_latency_estimation = rospy.get_param(
+        #     '~base_station_ip_for_latency_estimation',
+        #     '10.10.10.1')
+        # self.multicaster = []
+        # self.multicast_recv = []
 
         # Navsatfix settings.
         self.var_spp = rospy.get_param('~var_spp', [25.0, 25.0, 64.0])
@@ -128,10 +130,10 @@ class PiksiMulti:
         self.receiver_state_msg = self.init_receiver_state_msg()
         self.num_wifi_corrections = self.init_num_corrections_msg()
 
-        # Corrections over wifi message, if we are not the base station.
-        if not self.base_station_mode:
-            # Start new thread to periodically ping base station.
-            threading.Thread(target=self.ping_base_station_over_wifi).start()
+        # # Corrections over wifi message, if we are not the base station.
+        # if not self.base_station_mode:
+        #     # Start new thread to periodically ping base station.
+        #     threading.Thread(target=self.ping_base_station_over_wifi).start()
 
         self.handler.start()
 
@@ -145,10 +147,10 @@ class PiksiMulti:
         self.watchdog_time = rospy.get_rostime()
         self.messages_started = False
 
-        # Only have start-up reset in base station mode
-        if self.base_station_mode:
-            # Things have 30 seconds to start or we will kill node
-            rospy.Timer(rospy.Duration(30), self.watchdog_callback, True)
+        # # Only have start-up reset in base station mode
+        # if self.base_station_mode:
+        #     # Things have 30 seconds to start or we will kill node
+        #     rospy.Timer(rospy.Duration(30), self.watchdog_callback, True)
 
         # Spin.
         rospy.spin()
@@ -198,18 +200,18 @@ class PiksiMulti:
         #                   SBP_MSG_POS_LLH, MsgPosLLH,
         #                   'tow', 'lat', 'lon', 'height', 'h_accuracy', 'v_accuracy', 'n_sats', 'flags')
 
-        # Subscribe to OBS messages and relay them via UDP if in base station mode.
-        if self.base_station_mode:
-            rospy.loginfo("Starting in base station mode")
-            self.multicaster = UdpHelpers.SbpUdpMulticaster(self.udp_broadcast_addr, self.udp_port)
+        # # Subscribe to OBS messages and relay them via UDP if in base station mode.
+        # if self.base_station_mode:
+        #     rospy.loginfo("Starting in base station mode")
+        #     self.multicaster = UdpHelpers.SbpUdpMulticaster(self.udp_broadcast_addr, self.udp_port)
 
-            self.handler.add_callback(self.callback_sbp_obs, msg_type=SBP_MSG_OBS)
-            # not sure if SBP_MSG_BASE_POS_LLH or SBP_MSG_BASE_POS_ECEF is better?
-            #self.handler.add_callback(self.callback_sbp_base_pos_llh, msg_type=SBP_MSG_BASE_POS_LLH)
-            self.handler.add_callback(self.callback_sbp_base_pos_ecef, msg_type=SBP_MSG_BASE_POS_ECEF)
-        else:
-            rospy.loginfo("Starting in client station mode")
-            self.multicast_recv = UdpHelpers.SbpUdpMulticastReceiver(self.udp_port, self.multicast_callback)
+        #     self.handler.add_callback(self.callback_sbp_obs, msg_type=SBP_MSG_OBS)
+        #     # not sure if SBP_MSG_BASE_POS_LLH or SBP_MSG_BASE_POS_ECEF is better?
+        #     #self.handler.add_callback(self.callback_sbp_base_pos_llh, msg_type=SBP_MSG_BASE_POS_LLH)
+        #     self.handler.add_callback(self.callback_sbp_base_pos_ecef, msg_type=SBP_MSG_BASE_POS_ECEF)
+        # else:
+        #     rospy.loginfo("Starting in client station mode")
+        #     self.multicast_recv = UdpHelpers.SbpUdpMulticastReceiver(self.udp_port, self.multicast_callback)
 
     def init_num_corrections_msg(self):
         num_wifi_corrections = InfoWifiCorrections()
@@ -303,44 +305,44 @@ class PiksiMulti:
             publishers['pos_ecef_multi'] = rospy.Publisher(rospy.get_name() + '/pos_ecef',
                                                            PosEcef, queue_size=10)
 
-        if not self.base_station_mode:
-            publishers['wifi_corrections'] = rospy.Publisher(rospy.get_name() + '/debug/wifi_corrections',
-                                                             InfoWifiCorrections, queue_size=10)
+        # if not self.base_station_mode:
+        #     publishers['wifi_corrections'] = rospy.Publisher(rospy.get_name() + '/debug/wifi_corrections',
+        #                                                      InfoWifiCorrections, queue_size=10)
 
         return publishers
 
-    def ping_base_station_over_wifi(self):
-        """
-        Ping base station periodically without blocking the driver.
-        """
-        ping_deadline_seconds = 3
-        interval_between_pings_seconds = 5
+    # def ping_base_station_over_wifi(self):
+    #     """
+    #     Ping base station periodically without blocking the driver.
+    #     """
+    #     ping_deadline_seconds = 3
+    #     interval_between_pings_seconds = 5
 
-        while not rospy.is_shutdown():
-            # Send ping command.
-            command = ["ping",
-                       "-w", str(ping_deadline_seconds),  # deadline before stopping attempt
-                       "-c", "1",  # number of pings to send
-                       self.base_station_ip_for_latency_estimation]
-            ping = subprocess.Popen(command, stdout=subprocess.PIPE)
+    #     while not rospy.is_shutdown():
+    #         # # Send ping command.
+    #         # command = ["ping",
+    #         #            "-w", str(ping_deadline_seconds),  # deadline before stopping attempt
+    #         #            "-c", "1",  # number of pings to send
+    #         #            self.base_station_ip_for_latency_estimation]
+    #         # ping = subprocess.Popen(command, stdout=subprocess.PIPE)
 
-            out, error = ping.communicate()
-            # Search for 'min/avg/max/mdev' round trip delay time (rtt) numbers.
-            matcher = re.compile("(\d+.\d+)/(\d+.\d+)/(\d+.\d+)/(\d+.\d+)")
+    #         # out, error = ping.communicate()
+    #         # # Search for 'min/avg/max/mdev' round trip delay time (rtt) numbers.
+    #         # matcher = re.compile("(\d+.\d+)/(\d+.\d+)/(\d+.\d+)/(\d+.\d+)")
 
-            if matcher.search(out) == None:
-                # No ping response within ping_deadline_seconds.
-                # In python write and read operations on built-in type are atomic,
-                # there's no need to use mutex.
-                self.num_wifi_corrections.latency = -1
-            else:
-                groups_rtt = matcher.search(out).groups()
-                avg_rtt = groups_rtt[1]
-                # In python write and read operations on built-in type are atomic,
-                # there's no need to use mutex.
-                self.num_wifi_corrections.latency = float(avg_rtt)
+    #         # if matcher.search(out) == None:
+    #         #     # No ping response within ping_deadline_seconds.
+    #         #     # In python write and read operations on built-in type are atomic,
+    #         #     # there's no need to use mutex.
+    #         #     self.num_wifi_corrections.latency = -1
+    #         # else:
+    #         #     groups_rtt = matcher.search(out).groups()
+    #         #     avg_rtt = groups_rtt[1]
+    #         #     # In python write and read operations on built-in type are atomic,
+    #         #     # there's no need to use mutex.
+    #         #     self.num_wifi_corrections.latency = float(avg_rtt)
 
-            time.sleep(interval_between_pings_seconds)
+    #         time.sleep(interval_between_pings_seconds)
 
     def make_callback(self, sbp_type, ros_message, pub, attrs):
         """
@@ -388,23 +390,28 @@ class PiksiMulti:
 
     def callback_sbp_obs(self, msg, **metadata):
         # rospy.logwarn("CALLBACK SBP OBS")
-        self.multicaster.sendSbpPacket(msg)
+        # self.multicaster.sendSbpPacket(msg)
+        pass
 
     def callback_sbp_obs_dep_a(self, msg, **metadata):
         # rospy.logwarn("CALLBACK SBP OBS DEP A")
-        self.multicaster.sendSbpPacket(msg)
+        # self.multicaster.sendSbpPacket(msg)
+        pass
 
     def callback_sbp_obs_dep_b(self, msg, **metadata):
         # rospy.logwarn("CALLBACK SBP OBS DEP B")
-        self.multicaster.sendSbpPacket(msg)
+        # self.multicaster.sendSbpPacket(msg)
+        pass
 
     def callback_sbp_base_pos_llh(self, msg, **metadata):
         # rospy.logwarn("CALLBACK SBP OBS BASE LLH")
-        self.multicaster.sendSbpPacket(msg)
+        # self.multicaster.sendSbpPacket(msg)
+        pass
 
     def callback_sbp_base_pos_ecef(self, msg, **metadata):
         # rospy.logwarn("CALLBACK SBP OBS BASE LLH")
-        self.multicaster.sendSbpPacket(msg)
+        # self.multicaster.sendSbpPacket(msg)
+        pass
 
     def multicast_callback(self, msg, **metadata):
         # rospy.logwarn("MULTICAST Callback")
@@ -415,8 +422,8 @@ class PiksiMulti:
             self.num_wifi_corrections.header.seq += 1
             self.num_wifi_corrections.header.stamp = rospy.Time.now()
             self.num_wifi_corrections.received_corrections += 1
-            if not self.base_station_mode:
-                self.publishers['wifi_corrections'].publish(self.num_wifi_corrections)
+            # if not self.base_station_mode:
+            #     self.publishers['wifi_corrections'].publish(self.num_wifi_corrections)
 
         else:
             rospy.logwarn("Received external SBP msg, but Piksi not connected.")
@@ -425,8 +432,8 @@ class PiksiMulti:
         if ((rospy.get_rostime() - self.watchdog_time).to_sec() > 10.0):
             rospy.logwarn("Heartbeat failed, watchdog triggered.")
 
-            if self.base_station_mode:
-                rospy.signal_shutdown("Watchdog triggered, was gps disconnected?")
+            # if self.base_station_mode:
+            #     rospy.signal_shutdown("Watchdog triggered, was gps disconnected?")
 
     def pos_llh_callback(self, msg_raw, **metadata):
         msg = MsgPosLLH(msg_raw)
@@ -779,6 +786,12 @@ class PiksiMulti:
 
         return response
 
+def ros_showwarning(message, category, filename, lineno, file=None, line=None):
+    formated_warning = warnings.formatwarning(message, category, filename, lineno, line)
+    rospy.logwarn(formated_warning)
+
+warnings.showwarning = ros_showwarning
+
 # Main function.
 if __name__ == '__main__':
     rospy.init_node('piksi')
@@ -788,3 +801,4 @@ if __name__ == '__main__':
         piksi_multi = PiksiMulti()
     except rospy.ROSInterruptException:
         pass
+
