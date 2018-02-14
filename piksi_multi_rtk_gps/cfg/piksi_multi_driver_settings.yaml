@@ -1,5 +1,5 @@
 # General Settings.
-serial_port: '/dev/ttyACM0'
+serial_port: '/dev/ttyUSB.sbp'
 baud_rate: 115200
 base_station_mode: false
 debug_mode: false # if true, output every topic read by this driver
