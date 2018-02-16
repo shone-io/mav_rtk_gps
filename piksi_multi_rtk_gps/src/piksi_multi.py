@@ -786,16 +786,29 @@ class PiksiMulti:
 
         return response
 
-def ros_showwarning(message, category, filename, lineno, file=None, line=None):
-    formated_warning = warnings.formatwarning(message, category, filename, lineno, line)
-    rospy.logwarn(formated_warning)
+class RosWarningFilter(object):
+    EXCLUDE_MESSAGE_START = "No message found for msg_type id 65 for msg"
+    def __init__(self):
+        self.message_repeat_count = 0
+    def showwarning(self, message, category, filename, lineno, file=None, line=None):
+        message_string = str(message)
+        if message_string.startswith(self.EXCLUDE_MESSAGE_START):
+            self.message_repeat_count += 1
+            if(self.message_repeat_count >= 3):
+                if(self.message_repeat_count == 3):
+                    rospy.logwarn("ignoring repeated message: "+message_string)
+                return
+        formated_warning = warnings.formatwarning(message, category, filename, lineno, line)
+        rospy.logwarn(formated_warning)
 
-warnings.showwarning = ros_showwarning
+ros_warning_filter = RosWarningFilter()
+
+warnings.showwarning = ros_warning_filter.showwarning
 
 # Main function.
 if __name__ == '__main__':
     rospy.init_node('piksi')
-
+    rospy.sleep(1)
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
         piksi_multi = PiksiMulti()
